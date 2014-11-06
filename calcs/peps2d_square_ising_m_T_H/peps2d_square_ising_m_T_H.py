@@ -6,23 +6,16 @@ from tnslib.peps2d.square import BC
 import numpy as np
 import time
 
-for i in range(-2, 3):
-    H = i*1e-5
-    tns = tnslib.peps2d.square.ising.State(3, H, BC.periodicBounds, BC.openBounds, 5, 20)    
-    chi, m, F = tns.susceptibilityThermodynamic()
-    print H, "\t", F
-exit()
-
 startTime = time.time()
 
 Nv = 5
 Nh = 20
-NT = 7
+NT = 43
 T = np.linspace(0, 6, NT)
 NH = 3
 H = np.linspace(0, 0.2, NH)
 
-numProcs = 2
+numProcs = 10
 numDataPointsToProc = -(-(NT*NH) / numProcs) # int-division with ceil
 
 os.system("mkdir -p tmp")
