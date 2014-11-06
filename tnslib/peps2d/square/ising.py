@@ -78,7 +78,7 @@ class State:
     def __init__(self, T, H, BCv, BCh, Nv, Nh):
         self.p = 2
         self.D = 2
-        self.H = np.abs(H)
+        self.H = H
         self.BCv = BCv
         self.BCh = BCh
         self.T = T
@@ -178,39 +178,8 @@ class State:
             return d.evaluate(1) / self.N + 1.0
         else: # returns == "mF"
             return d.evaluate(1) / self.N + 1.0, d.evaluate(0)
-        """
-        if order >= 3:
-            order = 4
-        if order <= 0:
-            raise ValueError("Can not determine derivative of orders smaller 1!")
-        
-        minIdx = 0 if order == 1 else (-1 if order == 2 else -2)
-        maxIdx = 2 if order == 4 else 1
-        F = np.ndarray(maxIdx - minIdx + 1)
-        
-        for i in range(minIdx, maxIdx+1):
-            if i == 0:
-                if order == 1 or returns.find("F") != -1:
-                    F[0] = self.freeEnergy()
-            else:
-                t = create(self.T, self.H + i*deltaH, self.BCv, self.BCh, self.Nv, self.Nh)
-                F[i] = t.freeEnergy()
-                
-        if order == 1:
-            m = (F[1] - F[0]) / deltaH + 1
-        elif order == 2:
-            m = 0.5*(F[1] - F[-1]) / (deltaH * self.Nv * self.Nh) + 1
-        elif order == 4:
-            m = (-F[2] + 8*F[1] - 8*F[-1] + F[-2]) / (12.0 * deltaH * self.Nv * self.Nh) + 1
-        
-        if returns == "m":
-            return m
-        else:
-            return m, F[0]
-        """
     
     def susceptibilityThermodynamic(self, deltaH = 1e-5, order=2, returns="XmF"):
-        """
         d = _Derivative(2, order, deltaH)
         for i in d.requiredIndices:
             d.data[i] = State(self.T, self.H + i*deltaH, self.BCv, self.BCh, self.Nv, self.Nh).freeEnergy()
@@ -222,23 +191,6 @@ class State:
             return d.evaluate(2) / self.N, d.evaluate(0)
         else: # returns == "XmF"
             return d.evaluate(2) / self.N, d.evaluate(1) / self.N + 1.0, d.evaluate(0)
-        """
-        order = np.min([2, (int(order) / 2) * 2]) # order has to be even and and least 2
-        if order != 2:
-            raise NotImplementedError("orders != 2 are not yet implemented!")
-        F = np.ndarray((5))
-        m = np.ndarray((3))
-        for i in range(-2, 3):
-            if i == 0:
-                F[i] = self.freeEnergy()
-            else:
-                t = create(self.T, self.H + i*deltaH, self.BCv, self.BCh, self.Nv, self.Nh)
-                F[i] = t.freeEnergy()
-        for i in range(-1, 2):
-            m[i] = 0.5*(F[i+1] - F[i-1]) / (deltaH * self.Nv * self.Nh) + 1
-        chi= 0.5*(m[1] - m[-1]) / deltaH
-        return chi, m[0], F[0]
-        
     
     def oneBodyObservable(self, o, row=0, col=0):
         if row < 0 or row >= self.Nv:
