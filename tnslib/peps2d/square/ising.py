@@ -22,14 +22,12 @@ def _hMatrix(H, Ni, Nj):
 
 def _twoParticleGate(T, H, Ni, Nj):
     if T == 0:
-        beta = float("inf")
+        h = np.ndarray((2, 2))
+        h[0, 0] = 1 if H == 0 else 0
+        h[0, 1] = h[1, 0] = 0
+        h[1, 1] = 1
     else:
-        beta = 1.0 / T
-    h = np.exp(-0.5 * beta * _hMatrix(H, Ni, Nj))
-    if T == 0:
-        if H == 0:
-            h[0,0] = 1
-        h[1,1] = 1
+        h = np.exp(-0.5 * _hMatrix(H, Ni, Nj) / T)
     return h
 
 class _Derivative:
@@ -145,13 +143,13 @@ class State:
     def squareModulus(self):
         if self.BCv == BC.periodicBounds and self.BCh == BC.openBounds:
             if self.Nh >= 5:
-                #ringA = util.buildRingMatrix(util.contractPhysicalBond(self.a), self.Nv)
-                ringA = util.buildRingMatrix02(util.contractPhysicalBond(self.a), self.Nv)
+                ringA = util.buildRingMatrix(util.contractPhysicalBond(self.a), self.Nv)
+                #ringA = util.buildRingMatrix02(util.contractPhysicalBond(self.a), self.Nv)
             if self.Nh >= 3:
-                #ringB = util.buildRingMatrix(util.contractPhysicalBond(self.b), self.Nv)
-                ringB = util.buildRingMatrix02(util.contractPhysicalBond(self.b), self.Nv)
-            #ringR = util.buildRingVector(util.contractPhysicalBond(self.r), self.Nv)
-            ringR = util.buildRingMatrix02(util.contractPhysicalBond(self.r), self.Nv)
+                ringB = util.buildRingMatrix(util.contractPhysicalBond(self.b), self.Nv)
+                #ringB = util.buildRingMatrix02(util.contractPhysicalBond(self.b), self.Nv)
+            ringR = util.buildRingVector(util.contractPhysicalBond(self.r), self.Nv)
+            #ringR = util.buildRingMatrix02(util.contractPhysicalBond(self.r), self.Nv)
             if self.Nh == 2:
                 return dot(ringR, ringR)
             elif self.Nh == 3:

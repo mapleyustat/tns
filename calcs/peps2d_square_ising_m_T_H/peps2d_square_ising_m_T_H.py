@@ -1,21 +1,28 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 import tnslib.peps2d.square.ising
 from tnslib.peps2d.square import BC
 import numpy as np
 import time
 
+if len(sys.argv) < 3:
+    print "usage: python peps2d_square_ising_m_T_H.py x numProcs"
+    print "  note: number of T-points is 7 + 6*x"
+    print "  note: will fork numProcs processes"
+    exit(-1)
+
 startTime = time.time()
 
 Nv = 5
 Nh = 20
-NT = 43
+NT = 7 + int(sys.argv[1])*6
 T = np.linspace(0, 6, NT)
 NH = 3
 H = np.linspace(0, 0.2, NH)
 
-numProcs = 10
+numProcs = int(sys.argv[2])
 numDataPointsToProc = -(-(NT*NH) / numProcs) # int-division with ceil
 
 os.system("mkdir -p tmp")
