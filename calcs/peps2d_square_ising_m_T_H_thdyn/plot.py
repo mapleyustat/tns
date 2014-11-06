@@ -30,6 +30,7 @@ plt.title("$N_v = " + str(Nv) + "$, $N_h = " + str(Nh) + "$")
 plt.legend(loc=2)
 plt.xlabel("$T$ $[J]$")
 plt.ylabel("$F$ $[J]$")
+plt.ylim(ymin=0)
 plt.savefig("F_T_H.png")
 
 with open("m_T_H.dat", "r") as f:
