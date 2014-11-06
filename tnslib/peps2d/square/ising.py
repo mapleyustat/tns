@@ -189,52 +189,70 @@ class State:
                 a2 = util.contractPhysicalBond(self.a)
                 o2 = np.tensordot(np.tensordot(o, self.a, (0, 0)), np.conj(self.a), (0, 0))
                 o2 = util.reindexContractedTensor(o2)
-                ringA = util.buildRingMatrix(a2, self.Nv - 1)
+                ringA = util.buildChainMatrix(a2, self.Nv - 1)
                 ringO = util.addChainLinkMatrix(ringA, o2)
                 ringA = util.addChainLinkMatrix(ringA, a2)
+                ringO = np.einsum(ringO, [0, 1, 0, 2])
+                ringA = np.einsum(ringA, [0, 1, 0, 2])
             if self.Nh >= 3:
                 b2 = util.contractPhysicalBond(self.b)
-                ringB = util.buildRingMatrix(b2, self.Nv - 1)
+                ringB = util.buildChainMatrix(b2, self.Nv - 1)
             r2 = util.contractPhysicalBond(self.r)
-            ringR = util.buildRingVector(r2, self.Nv - 1)
+            ringR = util.buildChainVector(r2, self.Nv - 1)
             if self.Nh == 2:
                 o2 = np.tensordot(np.tensordot(o, self.r, (0, 0)), np.conj(self.r), (0, 0))
                 o2 = util.reindexContractedTensor(o2)
                 ringO = util.addChainLinkVector(ringR, o2)
                 ringR = util.addChainLinkVector(ringR, r2)
-                return np.dot(ringO, ringR)
+                ringO = np.einsum(ringO, [0, 1, 0, 2])
+                ringR = np.einsum(ringR, [0, 1, 0])
+                Z = np.dot(ringR, ringR)
+                return np.dot(ringO, ringR) / Z
             elif self.Nh == 3:
                 o2 = np.tensordot(np.tensordot(o, self.b, (0, 0)), np.conj(self.b), (0, 0))
                 o2 = util.reindexContractedTensor(o2)
-                ringB = util.addChainLinkMatrix(ringB, o2)
+                ringO = util.addChainLinkMatrix(ringB, o2)
+                ringB = util.addChainLinkMatrix(ringB, b2)
                 ringR = util.addChainLinkVector(ringR, r2)
-                return np.tensordot(np.tensordot(ringR, ringB, (0, 1)), ringR, (0, 0))
+                ringO = np.einsum(ringO, [0, 1, 0, 2])
+                ringB = np.einsum(ringO, [0, 1, 0, 2])
+                ringR = np.einsum(ringR, [0, 1, 0])
+                return np.tensordot(np.tensordot(ringR, ringO, (0, 1)), ringR, (0, 0)) / np.tensordot(np.tensordot(ringR, ringB, (0, 1)), ringR, (0, 0))
             elif self.Nh == 4:
                 o2 = np.tensordot(np.tensordot(o, self.b, (0, 0)), np.conj(self.b), (0, 0))
                 o2 = util.reindexContractedTensor(o2)
                 ringB = util.addChainLinkMatrix(ringB, b2)
                 ringR = util.addChainLinkVector(ringR, r2)
-                return np.dot(
-                    np.tensordot(ringR, util.addChainLinkMatrix(ringB, o2), (0, 1)),
-                    np.tensordot(util.addChainLinkMatrix(ringB, b2), ringR, (0, 0))
-                )
+                ringB = np.einsum(ringB, [0, 1, 0, 2])
+                ringR = np.einsum(ringR, [0, 1, 0])
+                v = np.tensordot(util.addChainLinkMatrix(ringB, b2), ringR, (0, 0))
+                return np.dot(np.tensordot(ringR, util.addChainLinkMatrix(ringB, o2), (0, 1)), v) / np.dot(v, v)
             else:
-                v = np.tensordot(util.addChainLinkVector(ringR, r2), util.addChainLinkMatrix(ringB, b2), (0, 1))
+                v = np.tensordot(
+                    np.einsum(util.addChainLinkVector(ringR, r2), [0, 1, 0]), 
+                    np.einsum(util.addChainLinkMatrix(ringB, b2), [0, 1, 0, 2]),
+                    (0, 1))
                 if self.Nh == 5:
-                    return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0))
+                    return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0)) / \
+                        np.tensordot(np.tensordot(v, ringA, (0, 1)), v, (0, 0))
                 if self.Nh == 6:
-                    return np.tensordot(np.tensordot(np.tensordot(v, ringO, (0, 1)), ringA, (0, 1)), v, (0, 0))
+                    v = np.tensordot(ringA, v, (0, 0))
+                    return np.dot(np.tensordot(v, ringO, (0, 1)), v) / np.dot(v, v)
                 else:
                     if self.Nh % 2 == 0:
                         ringO = np.tensordot(ringO, ringA, (0, 1))
-                    ringA = np.linalg.matrix_power(ringA, (self.Nh-5)/2)
-                    ringA = np.tensordot(v, ringA, (0, 1))
-                    return np.tensordot(np.tensordot(ringA, ringO, (0, 1)), ringA, (0, 0))
+                    v = np.tensordot(v, np.linalg.matrix_power(ringA, (self.Nh-5)/2), (0, 1))
+                    if self.Nh % 2 == 1:
+                        return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0)) / \
+                            np.tensordot(np.tensordot(v, ringA, (0, 1)), v, (0, 0))
+                    else:
+                        return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0)) / \
+                            np.tensordot(np.tensordot(v, np.linalg.matrix_power(ringA, 2), (0, 1)), v, (0, 0))
         else:
             raise ValueError("Not yet implemented for this BC!")
     
     def magnetisationInnermost(self):
-        return self.oneBodyObservableInnermost(np.array([-1.0, 0.0], [0.0, 1.0]))
+        return self.oneBodyObservableInnermost(np.array([[-1.0, 0.0], [0.0, 1.0]]))
     """
     def oneBodyObservable(self, o, row=0, col=0):
         if row < 0 or row >= self.Nv:

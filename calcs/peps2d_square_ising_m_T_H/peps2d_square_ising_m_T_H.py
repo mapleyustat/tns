@@ -31,9 +31,9 @@ numProcs = int(sys.argv[2])
 numDataPointsToProc = -(-(NT*NH) / numProcs) # int-division with ceil
 
 os.system("mkdir -p tmp")
-os.system("rm tmp/F_T_H_*.dat")
+#os.system("rm tmp/F_T_H_*.dat")
 os.system("rm tmp/m_T_H_*.dat")
-os.system("rm tmp/chi_T_H_*.dat")
+#os.system("rm tmp/chi_T_H_*.dat")
 
 for i in range(numProcs):
     if os.fork() == 0:
@@ -70,8 +70,8 @@ for i in range(numProcs):
 
 print "runtime:", time.time() - startTime, "seconds"
 
-os.system("cat tmp/F_T_H_*.dat > F_T_H.dat")
+#os.system("cat tmp/F_T_H_*.dat > F_T_H.dat")
 os.system("cat tmp/m_T_H_*.dat > m_T_H.dat")
-os.system("cat tmp/chi_T_H_*.dat > chi_T_H.dat")
+#os.system("cat tmp/chi_T_H_*.dat > chi_T_H.dat")
 os.system("python plot.py " + str(Nv) + " " + str(Nh) + " " + str(NT) + " " + str(NH))
 exit()
