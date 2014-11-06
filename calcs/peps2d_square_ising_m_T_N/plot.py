@@ -17,7 +17,7 @@ T = np.ndarray(NT)
 Nh = np.ndarray(NNh)
 x = np.ndarray((NNh, NT))
 
-with open("F_T_H.dat", "r") as f:
+with open("F_T_N.dat", "r") as f:
     i = 0
     for line in f:
         fields = line.split(" ")
@@ -37,7 +37,7 @@ plt.xlabel("$T$ $[J]$")
 plt.ylabel("$F$ $[J]$")
 plt.savefig("F_T_N.png")
 
-with open("m_T_H.dat", "r") as f:
+with open("m_T_N.dat", "r") as f:
     i = 0
     for line in f:
         fields = line.split(" ")
@@ -55,7 +55,7 @@ plt.ylabel("$\\frac{M}{N} = \\frac{\partial F}{\partial H} + 1$")
 plt.ylim(0, 1)
 plt.savefig("m_T_N.png")
 
-with open("chi_T_H.dat", "r") as f:
+with open("chi_T_N.dat", "r") as f:
     i = 0
     for line in f:
         fields = line.split(" ")
