@@ -70,8 +70,8 @@ for i in range(numProcs):
 
 print "runtime:", time.time() - startTime, "seconds"
 
-os.system("cat tmp/F_T_H_*.dat > F_T_H.dat")
-os.system("cat tmp/m_T_H_*.dat > m_T_H.dat")
-os.system("cat tmp/chi_T_H_*.dat > chi_T_H.dat")
+os.system("cat tmp/F_T_N_*.dat > F_T_N.dat")
+os.system("cat tmp/m_T_N_*.dat > m_T_N.dat")
+os.system("cat tmp/chi_T_N_*.dat > chi_T_N.dat")
 os.system("python plot.py " + str(Nv) + " " + str(H) + " " + str(NT) + " " + str(NNh))
 exit()
