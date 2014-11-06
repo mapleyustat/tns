@@ -232,6 +232,9 @@ class State:
                     return np.tensordot(np.tensordot(ringA, ringO, (0, 1)), ringA, (0, 0))
         else:
             raise ValueError("Not yet implemented for this BC!")
+    
+    def magnetisationInnermost(self):
+        return self.oneBodyObservableInnermost(np.array([-1.0, 0.0], [0.0, 1.0]))
     """
     def oneBodyObservable(self, o, row=0, col=0):
         if row < 0 or row >= self.Nv:
