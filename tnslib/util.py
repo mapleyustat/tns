@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from numpy import tensordot as tdot
-from numpy import einsum as tsum
 
 def reindexContractedTensor(a):
     """ When contracting two tensors -- e.g. 
@@ -25,7 +23,10 @@ def contractPhysicalBond(a):
     the indices, such that result is b[j,k,...]. If an initial index j1 was 
     of dimension D, the resulting index j is of dimension D**2.
     """
-    return reindexContractedTensor(tdot(a, np.conj(a), (0, 0)))
+    return reindexContractedTensor(np.tensordot(a, np.conj(a), (0, 0)))
+
+def addChainLinkVector(chain, a):
+    return np.tensordot(chain, a, (2, 0)).reshape(a.shape[0], chain.shape[1] * a.shape[1], a.shape[2])
 
 def buildChainVector(a, n):
     if len(a.shape) != 3:
@@ -40,6 +41,10 @@ def buildChainVector(a, n):
     
 def buildRingVector(a, n):
     return np.einsum(buildChainVector(a, n), [0, 1, 0])
+
+def addChainLinkMatrix(chain, a):
+    return np.tensordot(chain, a, (2, 0)).swapaxes(2, 3).swapaxes(3, 4).reshape(
+        a.shape[0], chain.shape[1] * a.shape[1], a.shape[2], chain.shape[2] * a.shape[2])
 
 def buildChainMatrix(a, n):
     if len(a.shape) != 4:

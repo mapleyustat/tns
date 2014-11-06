@@ -8,9 +8,6 @@ Created on Wed Oct 22 11:54:54 2014
 import numpy as np
 from tnslib import util
 from tnslib.peps2d.square import BC
-from numpy import dot
-from numpy import tensordot as tdot
-from numpy import einsum as tsum
 
 def _hMatrix(H, Ni, Nj):
     h = np.ndarray((2, 2))
@@ -144,24 +141,20 @@ class State:
         if self.BCv == BC.periodicBounds and self.BCh == BC.openBounds:
             if self.Nh >= 5:
                 ringA = util.buildRingMatrix(util.contractPhysicalBond(self.a), self.Nv)
-                #ringA = util.buildRingMatrix02(util.contractPhysicalBond(self.a), self.Nv)
             if self.Nh >= 3:
                 ringB = util.buildRingMatrix(util.contractPhysicalBond(self.b), self.Nv)
-                #ringB = util.buildRingMatrix02(util.contractPhysicalBond(self.b), self.Nv)
             ringR = util.buildRingVector(util.contractPhysicalBond(self.r), self.Nv)
-            #ringR = util.buildRingMatrix02(util.contractPhysicalBond(self.r), self.Nv)
             if self.Nh == 2:
-                return dot(ringR, ringR)
+                return np.dot(ringR, ringR)
             elif self.Nh == 3:
-                return tdot(tdot(ringR, ringB, (0, 1)), ringR, (0, 0))
+                return np.tensordot(np.tensordot(ringR, ringB, (0, 1)), ringR, (0, 0))
             elif self.Nh == 4:
-                v = tdot(ringR, ringB, (0, 1))
-                return dot(v, v)
-            
-            v = tdot(ringR, ringB, (0, 1))
-            m = np.linalg.matrix_power(ringA, self.Nh-4)
-            return tdot(tdot(v, m, (0, 0)), v, (0, 0))
-            
+                v = np.tensordot(ringR, ringB, (0, 1))
+                return np.dot(v, v)
+            else:
+                v = np.tensordot(ringR, ringB, (0, 1))
+                m = np.linalg.matrix_power(ringA, self.Nh-4)
+                return np.tensordot(np.tensordot(v, m, (0, 0)), v, (0, 0))
         else:
             raise ValueError("Not yet implemented for this BC!")
         
@@ -190,6 +183,56 @@ class State:
         else: # returns == "XmF"
             return d.evaluate(2) / self.N, d.evaluate(1) / self.N + 1.0, d.evaluate(0)
     
+    def oneBodyObservableInnermost(self, o):
+        if self.BCv == BC.periodicBounds and self.BCh == BC.openBounds:
+            if self.Nh >= 5:
+                a2 = util.contractPhysicalBond(self.a)
+                o2 = np.tensordot(np.tensordot(o, self.a, (0, 0)), np.conj(self.a), (0, 0))
+                o2 = util.reindexContractedTensor(o2)
+                ringA = util.buildRingMatrix(a2, self.Nv - 1)
+                ringO = util.addChainLinkMatrix(ringA, o2)
+                ringA = util.addChainLinkMatrix(ringA, a2)
+            if self.Nh >= 3:
+                b2 = util.contractPhysicalBond(self.b)
+                ringB = util.buildRingMatrix(b2, self.Nv - 1)
+            r2 = util.contractPhysicalBond(self.r)
+            ringR = util.buildRingVector(r2, self.Nv - 1)
+            if self.Nh == 2:
+                o2 = np.tensordot(np.tensordot(o, self.r, (0, 0)), np.conj(self.r), (0, 0))
+                o2 = util.reindexContractedTensor(o2)
+                ringO = util.addChainLinkVector(ringR, o2)
+                ringR = util.addChainLinkVector(ringR, r2)
+                return np.dot(ringO, ringR)
+            elif self.Nh == 3:
+                o2 = np.tensordot(np.tensordot(o, self.b, (0, 0)), np.conj(self.b), (0, 0))
+                o2 = util.reindexContractedTensor(o2)
+                ringB = util.addChainLinkMatrix(ringB, o2)
+                ringR = util.addChainLinkVector(ringR, r2)
+                return np.tensordot(np.tensordot(ringR, ringB, (0, 1)), ringR, (0, 0))
+            elif self.Nh == 4:
+                o2 = np.tensordot(np.tensordot(o, self.b, (0, 0)), np.conj(self.b), (0, 0))
+                o2 = util.reindexContractedTensor(o2)
+                ringB = util.addChainLinkMatrix(ringB, b2)
+                ringR = util.addChainLinkVector(ringR, r2)
+                return np.dot(
+                    np.tensordot(ringR, util.addChainLinkMatrix(ringB, o2), (0, 1)),
+                    np.tensordot(util.addChainLinkMatrix(ringB, b2), ringR, (0, 0))
+                )
+            else:
+                v = np.tensordot(util.addChainLinkVector(ringR, r2), util.addChainLinkMatrix(ringB, b2), (0, 1))
+                if self.Nh == 5:
+                    return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0))
+                if self.Nh == 6:
+                    return np.tensordot(np.tensordot(np.tensordot(v, ringO, (0, 1)), ringA, (0, 1)), v, (0, 0))
+                else:
+                    if self.Nh % 2 == 0:
+                        ringO = np.tensordot(ringO, ringA, (0, 1))
+                    ringA = np.linalg.matrix_power(ringA, (self.Nh-5)/2)
+                    ringA = np.tensordot(v, ringA, (0, 1))
+                    return np.tensordot(np.tensordot(ringA, ringO, (0, 1)), ringA, (0, 0))
+        else:
+            raise ValueError("Not yet implemented for this BC!")
+    """
     def oneBodyObservable(self, o, row=0, col=0):
         if row < 0 or row >= self.Nv:
             raise ValueError("The selected row " + str(row) + " is not available (Nv = " + str(self.Nv) + ")!")
@@ -248,6 +291,7 @@ class State:
         return self.oneBodyObservableSumSites(np.array([-1.0, 0.0], [0.0, 1.0])) / (self.N)
     def magnetisationSingleSite(self):
         return self.oneBodyObservable(np.array([-1.0, 0.0], [0.0, 1.0]), self.Nh / 2)
+    """
 
 def create(T, H, BCv, BCh, Nv, Nh):
     """Creates the elementary tensors for an Ising PEPS with periodic boundary 
