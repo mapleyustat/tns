@@ -33,7 +33,7 @@ numDataPointsToProc = -(-(NT*NH) / numProcs) # int-division with ceil
 os.system("mkdir -p tmp")
 #os.system("rm tmp/F_T_H_*.dat")
 os.system("rm tmp/m_T_H_*.dat")
-#os.system("rm tmp/chi_T_H_*.dat")
+os.system("rm tmp/chi_T_H_*.dat")
 
 for i in range(numProcs):
     if os.fork() == 0:
@@ -50,19 +50,19 @@ for i in range(numProcs):
         outpidsuffix = "_" + str(i).zfill(2)
         #f1 = open("tmp/F_T_H" + outpidsuffix + ".dat", "w")
         f2 = open("tmp/m_T_H" + outpidsuffix + ".dat", "w")
-        #f3 = open("tmp/chi_T_H" + outpidsuffix + ".dat", "w")
+        f3 = open("tmp/chi_T_H" + outpidsuffix + ".dat", "w")
         
         for j in range(firstDataPoint, lastDataPoint):
             tns = tnslib.peps2d.square.ising.create(T[j%NT], H[j/NT], BC.periodicBounds, BC.openBounds, Nv, Nh)
             #chi, m, F = tns.susceptibilityThermodynamic()
-            m = tns.magnetisationInnermost()
+            chi, m = tns.susceptibilityInnermost()
             #f1.write(str(H[j/NT]) + " " + str(T[j%NT]) + " " + str(F) + "\n")
             f2.write(str(H[j/NT]) + " " + str(T[j%NT]) + " " + str(m) + "\n")
-            #f3.write(str(H[j/NT]) + " " + str(T[j%NT]) + " " + str(chi) + "\n")
+            f3.write(str(H[j/NT]) + " " + str(T[j%NT]) + " " + str(chi) + "\n")
         
         #f1.close()
         f2.close()
-        #f3.close()
+        f3.close()
         exit()
         
 for i in range(numProcs):
@@ -72,6 +72,6 @@ print "runtime:", time.time() - startTime, "seconds"
 
 #os.system("cat tmp/F_T_H_*.dat > F_T_H.dat")
 os.system("cat tmp/m_T_H_*.dat > m_T_H.dat")
-#os.system("cat tmp/chi_T_H_*.dat > chi_T_H.dat")
+os.system("cat tmp/chi_T_H_*.dat > chi_T_H.dat")
 os.system("python plot.py " + str(Nv) + " " + str(Nh) + " " + str(NT) + " " + str(NH))
 exit()

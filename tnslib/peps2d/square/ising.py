@@ -253,66 +253,17 @@ class State:
     
     def magnetisationInnermost(self):
         return self.oneBodyObservableInnermost(np.array([[-1.0, 0.0], [0.0, 1.0]]))
-    """
-    def oneBodyObservable(self, o, row=0, col=0):
-        if row < 0 or row >= self.Nv:
-            raise ValueError("The selected row " + str(row) + " is not available (Nv = " + str(self.Nv) + ")!")
-        if col < 0 or col >= self.Nv:
-            raise ValueError("The selected column " + str(col) + " is not available (Nh = " + str(self.Nh) + ")!")
-            
-        if self.BCs == BC.hopen_vperiodic:
-            if self.Nh >= 5:
-                a2 = util.contractPhysicalBond(self.a)
-                ringA = util.buildRingMatrix(a2, self.Nv, 0, 2)
-                if col >= 2 and col <= self.Nh - 3:
-                    o2 = tdot(tdot(o, self.a, (0, 0)), np.conj(self.a), (0, 0))
-                    o2 = util.reindexContractedTensor(o2)
-                    ringO = util.buildChainMatrix(a2, self.Nv - 1, 0, 2)
-            if self.Nh >= 3:
-                b2 = util.contractPhysicalBond(self.b)
-                ringB = util.buildRingMatrix(b2, self.Nv, 0, 2)
-                if col == 1 or col == self.Nh - 2:
-                    o2 = tdot(tdot(o, self.b, (0, 0)), np.conj(self.b), (0, 0))
-                    o2 = util.reindexContractedTensor(o2)
-                    ringO = util.buildChainMatrix(b2, self.Nv - 1, 0, 2)
-            if col == 0 or col == self.Nh - 1:
-                o2 = tdot(tdot(o, self.r, (0, 0)), np.conj(self.r), (0, 0))
-                o2 = util.reindexContractedTensor(o2)
-                ringO = util.buildChainMatrix(r2, self.Nv - 1, 0, 2)
-            r2 = util.contractPhysicalBond(self.r)
-            ringR = util.buildRingMatrix(r2, self.Nv, 0, 2)
-            ringO = tdot(ringO, o2, (2, 0))
-            if len(ringO.shape) == 6:
-                ringO = tsum(ringO, (0, 1, 3, 2, 0, 4))
+    def susceptibilityInnermost(self, deltaH = 1e-5, order=2, returns="Xm"):
+        d = _Derivative(1, order, deltaH)
+        for i in d.requiredIndices:
+            if i == 0:
+                d.data[0] = self.magnetisationInnermost()
             else:
-                ringO = tsum(ringO, (0, 1, 2, 0))
-            ringO = ringO.reshape(ringO.shape[0]*ringO.shape[1], ringO.shape[0]*ringO.shape[1])
-            if self.Nh == 2:
-                return np.dot(ringR, ringO)
-            if self.Nh == 3:
-                if col == 1:
-                    return tdot(tdot(ringR, ringO, (0, 1)), ringR, (0, 0))
-                else:
-                    return tdot(tdot(ringO, ringB, (0, 1)), ringR, (0, 0))
-            else:
-                if col == 0 or col == self.Nh - 1:
-                    return -1
-                elif col == 1 or col == self.Nh - 2:
-                    return -1
-                else:
-                    return -1
+                d.data[i] = State(self.T, self.H + i*deltaH, self.BCv, self.BCh, self.Nv, self.Nh).magnetisationInnermost()
+        if returns == "X":
+            return d.evaluate(1)
         else:
-            raise ValueError("Not yet implemented for this BC!")
-    
-    def oneBodyObservableSumSites(self, o):
-        return 0
-    def magnetisation(self):
-        return self.oneBodyObservableSumSites(np.array([-1.0, 0.0], [0.0, 1.0]))
-    def magnetisationDensity(self):
-        return self.oneBodyObservableSumSites(np.array([-1.0, 0.0], [0.0, 1.0])) / (self.N)
-    def magnetisationSingleSite(self):
-        return self.oneBodyObservable(np.array([-1.0, 0.0], [0.0, 1.0]), self.Nh / 2)
-    """
+            return d.evaluate(1), d.evaluate(0)
 
 def create(T, H, BCv, BCh, Nv, Nh):
     """Creates the elementary tensors for an Ising PEPS with periodic boundary 
