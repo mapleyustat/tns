@@ -58,11 +58,12 @@ with open("chi_T_H.dat", "r") as f:
         i += 1
 
 plt.clf()
-for i in range(1, NH):
+for i in range(NH):
     plt.plot(T, x[i], marker="x", label="$H = " + str(H[i]) + "$")
 plt.grid(True)
 plt.title("$N_v = " + str(Nv) + "$, $N_h = " + str(Nh) + "$")
 plt.legend(loc=1)
 plt.xlabel("$T$ $[J]$")
 plt.ylabel("$\\chi = \\frac{\partial m}{\partial H} = \\frac{1}{N} \\, \\frac{\partial^2 F}{\partial H^2}$ $[1/J]$")
+plt.ylim(0, 3.5)
 plt.savefig("chi_T_H.png")
