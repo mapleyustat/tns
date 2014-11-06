@@ -49,9 +49,9 @@ for i in range(numProcs):
         print "child process", i, "doing", (lastDataPoint-firstDataPoint), "data points"
         
         outpidsuffix = "_" + str(i).zfill(2)
-        f1 = open("tmp/F_T_H" + outpidsuffix + ".dat", "w")
-        f2 = open("tmp/m_T_H" + outpidsuffix + ".dat", "w")
-        f3 = open("tmp/chi_T_H" + outpidsuffix + ".dat", "w")
+        f1 = open("tmp/F_T_N" + outpidsuffix + ".dat", "w")
+        f2 = open("tmp/m_T_N" + outpidsuffix + ".dat", "w")
+        f3 = open("tmp/chi_T_N" + outpidsuffix + ".dat", "w")
         
         for j in range(firstDataPoint, lastDataPoint):
             tns = tnslib.peps2d.square.ising.create(T[j%NT], H, BC.periodicBounds, BC.openBounds, Nv, Nh[j/NT])
