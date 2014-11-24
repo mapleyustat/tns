@@ -134,8 +134,19 @@ class State:
                 self.b = np.fromfunction(
                     lambda s,j,k,l,m: b[s,j]*c1[s,k]*b[s,l]*c1[s,m], [2]*5, dtype=int)
             
+            """
+            if T == 0:
+                theta = 0
+            else:
+                theta = 0.5 * np.arcsin(np.exp(-1.0 / T))
+            c = np.cos(theta)
+            s = np.sin(theta)
+            d = np.array([[c, s], [s, c]])
+            self.r = np.fromfunction(
+                lambda s,j,k,l: d[s,j]*d[s,k]*d[s,l], [2]*4, dtype=int)
+            """
         else:
-            raise ValueError("Ising-PEPS for these boundary conditions is not yet implemented!")
+            raise NotImplementedError("Ising-PEPS for these boundary conditions is not yet implemented!")
         
     def squareModulus(self):
         if self.BCv == BC.periodicBounds and self.BCh == BC.openBounds:
@@ -156,7 +167,7 @@ class State:
                 m = np.linalg.matrix_power(ringA, self.Nh-4)
                 return np.tensordot(np.tensordot(v, m, (0, 0)), v, (0, 0))
         else:
-            raise ValueError("Not yet implemented for this BC!")
+            raise NotImplementedError("Not yet implemented for this BC!")
         
     def freeEnergy(self):
         return np.log(self.squareModulus()) * self.T
@@ -249,7 +260,7 @@ class State:
                         return np.tensordot(np.tensordot(v, ringO, (0, 1)), v, (0, 0)) / \
                             np.tensordot(np.tensordot(v, np.linalg.matrix_power(ringA, 2), (0, 1)), v, (0, 0))
         else:
-            raise ValueError("Not yet implemented for this BC!")
+            raise NotImplementedError("Not yet implemented for this BC!")
     
     def magnetisationInnermost(self):
         return self.oneBodyObservableInnermost(np.array([[-1.0, 0.0], [0.0, 1.0]]))
@@ -264,6 +275,43 @@ class State:
             return d.evaluate(1)
         else:
             return d.evaluate(1), d.evaluate(0)
+
+    def boundaryDensityOperator(self):
+        if self.BCh == BC.openBounds and self.BCv == BC.periodicBounds:
+            if self.Nh % 2 == 1:
+                raise NotImplementedError("Not implemented for odd Nh!")
+            if self.Nh == 2:
+                r2 = util.contractPhysicalBond(self.r, "noreshape").reshape(self.D**2, self.D, self.D, self.D**2)
+                r2 = np.swapaxes(r2, 2, 3)
+                return util.buildRingMatrix(r2, self.Nv)
+            raise NotImplementedError("Not yet implemented!")
+            #ringR = util.buildRingVector(util.contractPhysicalBond(self.r), self.Nv)
+            #if self.Nh == 4:
+            #    b2 = util.contractPhysicalBond(self.b, "noreshape").reshape(self.D**2, self.D, self.D, self.D**2, self.D**2)
+                
+            """
+                ringB = util.buildRingMatrix(util.contractPhysicalBond(self.b), self.Nv)
+            if self.Nh >= 5:
+                a2 = util.contractPhysicalBond(self.a)
+                ringA = util.buildRingMatrix(a2, self.Nv)
+            """
+            
+            
+        else:
+            raise NotImplementedError("Not yet implemented for this BC!")
+    
+    def entanglementSpectrum(self, phase):
+        if self.BCh == BC.openBounds and self.BCv == BC.periodicBounds and self.Nh == 2:
+            r2 = self.r * np.exp((phase / self.N) * 1j)
+            ringSimple = util.buildRingMatrix(np.rollaxis(r2, 0, 3), self.Nv)
+            ringSimpleC = util.buildRingMatrix(np.rollaxis(np.conj(r2), 0, 3), self.Nv)
+            rhoL = np.tensordot(ringSimple, ringSimple, (0, 0))
+            rhoL = np.tensordot(rhoL, ringSimpleC, (1, 1))
+            rhoL = np.tensordot(rhoL, ringSimpleC, (1, 0))
+            return -2.0 * np.log(np.linalg.eigvalsh(rhoL))
+        else:
+            raise NotImplementedError("Not yet implemented for this BC!")
+
 
 def create(T, H, BCv, BCh, Nv, Nh):
     """Creates the elementary tensors for an Ising PEPS with periodic boundary 
